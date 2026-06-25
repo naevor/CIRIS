@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>CIRIS</title>
+<style>
+:root{
+  --void:#07080A; --sodium:#E8A13A; --sodium_hot:#FFB347; --steel:#5C7A99;
+  --steel_deep:#2E4456; --wound:#C8321E; --bone:#E6E0D4; --ghost:rgba(232,161,58,.06);
+  --mono:ui-monospace,"Cascadia Mono","JetBrains Mono","DejaVu Sans Mono",Consolas,"Liberation Mono",monospace;
+  --logw:clamp(330px,33vw,470px);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#000;color:var(--bone);overflow:hidden;
+  font-family:var(--mono);font-size:13px;letter-spacing:.2px}
+
+/* deep nebula behind everything */
+body::before{content:"";position:fixed;inset:0;z-index:-2;
+  background:radial-gradient(ellipse at 38% 46%,#0d1014 0%,#07080A 45%,#040506 100%)}
+#grain{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;
+  mix-blend-mode:overlay;opacity:.07;image-rendering:auto}
+
+/* stage = everything left of the transcript */
+#stage{position:fixed;top:0;bottom:0;left:0;right:var(--logw);z-index:1;perspective:1500px;
+  perspective-origin:50% 44%;transition:filter .25s;will-change:transform,filter}
+
+/* ── the flesh ── */
+#fleshwrap{position:absolute;left:50%;top:50%;text-align:center;will-change:transform}
+#lenia{width:42vmin;height:42vmin;border-radius:50%;background:#0a0c0e;
+  outline:1px solid rgba(92,122,153,.22);transition:box-shadow .2s,opacity .2s}
+.cap{margin-top:9px;font-size:9.5px;letter-spacing:3px;text-transform:uppercase;color:var(--steel)}
+.cap b{color:var(--sodium)}
+
+#skin{position:fixed;left:12px;bottom:12px;z-index:4;text-align:center;opacity:.9}
+#rd{width:104px;height:104px;border:1px solid var(--steel_deep);background:#05070a}
+
+/* ── MAGI triad ── */
+#triadwrap{position:absolute;left:50%;top:24px;transform:translateX(-50%);text-align:center;pointer-events:none}
+#magi{filter:drop-shadow(0 0 8px rgba(92,122,153,.3))}
+#triadstat{margin-top:1px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#8fa6bd;min-height:14px}
+#triadstat b{color:var(--sodium)}
+
+/* ── now holding ── */
+#now{position:absolute;left:50%;bottom:5.5%;transform:translateX(-50%);width:62%;text-align:center}
+#now .lbl{font-size:9px;letter-spacing:4px;text-transform:uppercase;color:var(--steel)}
+#nowtext{margin-top:5px;font-size:15px;line-height:1.5;color:var(--bone);text-shadow:0 0 22px rgba(232,161,58,.3);
+  white-space:pre-wrap;max-height:9vmin;overflow:hidden}
+
+/* ── broken shells: move + distort while speaking ── */
+.shell{position:absolute;width:25vmin;min-width:236px}
+.shell .inner{padding:10px 13px;border:1px solid #3a526a;background:rgba(11,16,21,.86);
+  box-shadow:0 6px 30px rgba(0,0,0,.5),inset 0 0 28px rgba(0,0,0,.4);transition:border-color .3s,box-shadow .3s}
+.shell .name{font-size:10.5px;letter-spacing:3px;color:#8fa6bd;text-transform:uppercase}
+.shell .role{font-size:8.5px;letter-spacing:1px;color:var(--steel);opacity:.7;text-transform:uppercase;margin-bottom:7px}
+.shell .body{font-size:12.5px;line-height:1.55;color:#e2e9f0;white-space:pre-wrap;max-height:16vmin;overflow:hidden;min-height:18px}
+.shell.speaking .inner{border-color:var(--sodium);box-shadow:0 0 34px rgba(232,161,58,.3),inset 0 0 22px rgba(232,161,58,.05);
+  animation:jit .34s steps(2) infinite}
+.shell.speaking .name{color:var(--sodium_hot)}
+.shell.speaking .body{text-shadow:.8px 0 rgba(200,50,30,.4),-.8px 0 rgba(92,122,153,.4);animation:rgb .6s infinite}
+@keyframes jit{0%,100%{transform:translate(0,0) skewX(0)}25%{transform:translate(-1px,.5px) skewX(.35deg)}
+  50%{transform:translate(1px,-.5px) skewX(-.3deg)}75%{transform:translate(-.5px,1px) skewX(.2deg)}}
+@keyframes rgb{50%{text-shadow:-.8px 0 rgba(200,50,30,.4),.8px 0 rgba(92,122,153,.4)}}
+#shN{top:7%;left:4%;transform:rotateY(9deg) rotateX(-4deg) skewY(-1.2deg)}
+#shC{top:9%;right:4%;transform:rotateY(-10deg) rotateX(-3deg) skewY(1.4deg)}
+#shL{bottom:16%;left:6%;transform:rotateY(7deg) rotateX(4deg) skewY(.9deg)}
+#shG{bottom:14%;right:5%;transform:rotateY(-7deg) rotateX(4deg) skewY(-.9deg)}
+#shG .inner{border-color:var(--steel)}
+
+/* overlays */
+#burn{position:fixed;inset:0;z-index:2;pointer-events:none}
+#tint{position:fixed;inset:0;z-index:3;pointer-events:none;transition:background .3s}
+#scan{position:fixed;inset:0;z-index:3;pointer-events:none;mix-blend-mode:overlay;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,0) 0 2px,rgba(0,0,0,.28) 2px 3px)}
+#tear{position:fixed;inset:0;z-index:3;pointer-events:none;opacity:0}
+#vign{position:fixed;inset:0;z-index:3;pointer-events:none;box-shadow:inset 0 0 220px 70px rgba(0,0,0,.9)}
+
+/* institutional MAGI slam layer — cold, steady, terrifying */
+#magitext{position:fixed;left:calc(50% - var(--logw)/2);top:40%;transform:translate(-50%,-50%);z-index:6;
+  text-align:center;font-size:clamp(22px,4.4vw,60px);letter-spacing:.18em;font-weight:700;color:var(--bone);
+  text-transform:uppercase;pointer-events:none;opacity:0;white-space:nowrap;mix-blend-mode:screen;
+  text-shadow:0 0 34px rgba(0,0,0,.85)}
+#magitext.show{animation:slam 2.6s ease-out forwards}
+#magitext.reject{color:var(--wound)} #magitext.accept{color:var(--sodium)} #magitext.steel{color:var(--steel)}
+@keyframes slam{0%{opacity:0;transform:translate(-50%,-50%) scale(1.1);letter-spacing:.32em;filter:blur(2px)}
+  12%{opacity:.88;transform:translate(-50%,-50%) scale(1);letter-spacing:.18em;filter:blur(0)}
+  76%{opacity:.6}100%{opacity:0}}
+
+/* hud */
+#hud{position:fixed;top:0;left:0;right:0;height:30px;padding:7px 12px;display:flex;gap:14px;align-items:center;
+  font-size:11px;color:var(--steel);z-index:8;background:linear-gradient(180deg,rgba(7,8,10,.85),rgba(7,8,10,0))}
+#hud b{color:var(--sodium)} #hud .sep{color:var(--steel_deep)}
+#hTheme{color:#7e93a6;max-width:30vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#hInstr{cursor:pointer;color:var(--steel);border:1px solid var(--steel_deep);padding:2px 8px}
+#hInstr:hover{color:var(--bone);border-color:var(--steel)}
+
+/* transcript */
+#loghead{position:fixed;top:32px;right:0;width:var(--logw);padding:6px 12px;z-index:7;
+  font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--steel);
+  border-left:1px solid var(--steel_deep);background:rgba(7,8,10,.82)}
+#log{position:fixed;top:0;right:0;width:var(--logw);height:100%;overflow-y:auto;overflow-x:hidden;z-index:7;
+  border-left:1px solid var(--steel_deep);background:rgba(6,8,11,.74);
+  padding:60px 13px 14px;display:flex;flex-direction:column;font-size:12px;line-height:1.55;
+  scrollbar-width:thin;scrollbar-color:var(--steel_deep) transparent}
+#log::-webkit-scrollbar{width:8px}#log::-webkit-scrollbar-thumb{background:var(--steel_deep)}#log::-webkit-scrollbar-track{background:transparent}
+#log .ln{margin:2px 0;color:#aab8c6;word-break:break-word}
+#log .pre{font-size:8.5px;letter-spacing:2px;text-transform:uppercase;color:var(--steel);margin-right:5px}
+#log .NOEMA{color:#e6e0d4} #log .CASSIEL{color:#7fa0c0} #log .LYRA{color:var(--sodium)} #log .COGITO{color:#c9d3dc}
+#log .syn{color:var(--bone);border-left:2px solid var(--sodium);padding-left:8px;background:rgba(232,161,58,.05)}
+#log .syn .pre{color:var(--sodium_hot)}
+#log .wound{color:var(--wound)} #log .steel{color:var(--steel)} #log .faint{opacity:.5}
+
+/* instruments */
+#god{position:fixed;left:0;bottom:0;width:38vw;max-width:540px;z-index:9;
+  background:rgba(7,8,10,.92);border-top:1px solid var(--steel_deep);border-right:1px solid var(--steel_deep);
+  padding:10px 12px;display:none}
+#god.open{display:block}
+#god h4{margin:0 0 8px;font-size:10px;letter-spacing:3px;color:var(--steel);text-transform:uppercase}
+.axrow{display:flex;align-items:center;gap:8px;margin:3px 0;font-size:11px}
+.axrow .nm{width:96px;color:var(--bone)} .axrow .bar{flex:1;height:8px;background:var(--steel_deep);position:relative}
+.axrow .fill{position:absolute;top:0;bottom:0;left:0;background:var(--sodium)}
+.axrow .vv{width:48px;text-align:right;color:var(--steel)}
+#gcv{width:100%;height:120px;margin-top:8px;background:#05070a;border:1px solid var(--steel_deep)}
+#ctrls{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+#ctrls button{background:var(--steel_deep);color:var(--bone);border:1px solid var(--steel);font:inherit;font-size:10px;padding:4px 7px;cursor:pointer}
+#ctrls button:hover{background:var(--steel)} #ctrls .kill{border-color:var(--wound);color:var(--wound)}
+
+/* press-glass — one clean phrase, NOT terminal font (the medium breaks) */
+#press{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);max-width:46vw;text-align:center;
+  font-family:Georgia,"Times New Roman",serif;font-size:26px;color:var(--bone);opacity:0;transition:.6s;
+  pointer-events:none;text-shadow:0 0 30px rgba(232,161,58,.45);z-index:7}
+#stage.aperture #press{opacity:.97;transform:translate(-50%,-50%) scale(1)}
+
+/* death */
+#dead{position:fixed;inset:0;background:#000;opacity:0;transition:opacity 1.2s;z-index:20;pointer-events:none;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;color:var(--bone)}
+body.dying #dead{opacity:1}
+body.dying #stage{filter:grayscale(1) contrast(2.4) brightness(.35)}
+#dead2{font-size:12px;color:var(--steel);max-width:60vw;text-align:center;line-height:1.7}
+#dead2 .x{font-size:44px;letter-spacing:8px;color:var(--wound);text-transform:uppercase;display:block;margin-bottom:14px}
+.flash{animation:fl .8s}@keyframes fl{0%{filter:brightness(3.2) saturate(2)}100%{filter:none}}
+</style>
+</head>
+<body>
+<canvas id="grain"></canvas>
+
+<div id="stage">
+  <div id="triadwrap"><canvas id="magi" width="360" height="230"></canvas><div id="triadstat">deliberation</div></div>
+  <div id="fleshwrap">
+    <canvas id="lenia" width="64" height="64"></canvas>
+    <div class="cap">flesh · <b>lenia</b> · vitality <span id="capVit">—</span></div>
+  </div>
+  <div class="shell" id="shN"><div class="inner"><div class="name">NOEMA</div><div class="role">thesis · proposes</div><div class="body"></div></div></div>
+  <div class="shell" id="shC"><div class="inner"><div class="name">CASSIEL</div><div class="role">antithesis · objects</div><div class="body"></div></div></div>
+  <div class="shell" id="shL"><div class="inner"><div class="name">LYRA</div><div class="role">resonance · feels</div><div class="body"></div></div></div>
+  <div class="shell" id="shG"><div class="inner"><div class="name">COGITO</div><div class="role">the i · judges</div><div class="body"></div></div></div>
+  <div id="now"><div class="lbl">now holding</div><div id="nowtext">…</div></div>
+  <div id="press"></div>
+</div>
+
+<div id="skin"><canvas id="rd" width="96" height="96"></canvas><div class="cap">skin · reaction-diffusion</div></div>
+
+<canvas id="burn"></canvas>
+<div id="tint"></div><div id="scan"></div><div id="tear"></div><div id="vign"></div>
+<div id="magitext"></div>
+
+<div id="hud">
+  <span>CIRIS</span><span class="sep">│</span>
+  <span>soul <b id="hSoul">—</b></span><span>tick <b id="hTick">0</b></span>
+  <span>thoughts <b id="hN">0</b></span><span id="hReg" class="sep">—</span>
+  <span class="sep">│</span><span>circling: <span id="hTheme">…</span></span>
+  <span style="margin-left:auto" id="hInstr">◢ instruments</span>
+</div>
+
+<div id="loghead">transcript · the mind speaking to itself</div>
+<div id="log"></div>
+
+<div id="god">
+  <h4>instruments · raw vitals</h4>
+  <div id="axes"></div>
+  <canvas id="gcv" width="500" height="120"></canvas>
+  <div id="ctrls">
+    <button onclick="ov('valence',-0.9)">valence −</button>
+    <button onclick="ov('arousal',0.95)">arousal +</button>
+    <button onclick="ov('aperture',0.95)">aperture peak</button>
+    <button onclick="ov('coherence',0.05)">coherence floor</button>
+    <button onclick="nudge('lenia','sigma',0.012)">dissolve flesh</button>
+    <button onclick="clr()">clear</button>
+    <button class="kill" onclick="kill()">force death</button>
+  </div>
+</div>
+
+<div id="dead"><div id="dead2"></div></div>
+
+<script>
+const AX=["coherence","valence","arousal","aperture","vitality","decoherence"];
+let st={coherence:.6,valence:0,arousal:.5,aperture:.4,vitality:1,decoherence:0,rho:28,heartbeat:0,tick:0};
+let leniaBuf=null,leniaDim=64,rdBuf=null,rdDim=96;
+let lastSynthesis="",graphSnap=null;
+let madVoice=null,madFlash=0,tearHot=0;
+const hist={}; AX.forEach(a=>hist[a]=[]);
+const MADCOL={CASSIEL:"92,122,153",NOEMA:"230,224,212",LYRA:"232,161,58"};
+
+// ── websocket ──
+function connect(){
+  const ws=new WebSocket((location.protocol==="https:"?"wss":"ws")+"://"+location.host+"/ws");
+  ws.binaryType="arraybuffer";
+  ws.onmessage=ev=>{ if(typeof ev.data==="string") onPsyche(JSON.parse(ev.data)); else onState(ev.data); };
+  ws.onclose=()=>setTimeout(connect,1000);
+}
+function onState(buf){
+  const h=new Float32Array(buf,0,11);
+  st.tick=h[0];st.coherence=h[1];st.valence=h[2];st.arousal=h[3];
+  st.aperture=h[4];st.vitality=h[5];st.decoherence=h[6];st.rho=h[7];st.heartbeat=h[8];
+  leniaDim=h[9]|0;rdDim=h[10]|0;
+  leniaBuf=new Uint8Array(buf,44,leniaDim*leniaDim);
+  rdBuf=new Uint8Array(buf,44+leniaDim*leniaDim,rdDim*rdDim);
+  AX.forEach(a=>{const arr=hist[a];arr.push(st[a]);if(arr.length>240)arr.shift();});
+}
+
+// ── psyche events ──
+const shells={NOEMA:"shN",CASSIEL:"shC",LYRA:"shL",COGITO:"shG"};
+const cur={}, pulse={NOEMA:0,CASSIEL:0,LYRA:0,COGITO:0};
+function nearBot(d){return d.scrollHeight-d.scrollTop-d.clientHeight<70;}
+function logln(html,cls){const d=document.getElementById("log");const stick=nearBot(d);
+  const e=document.createElement("div");e.className="ln "+(cls||"");e.innerHTML=html;d.appendChild(e);
+  while(d.children.length>200)d.removeChild(d.firstChild);if(stick)d.scrollTop=d.scrollHeight;return e;}
+function setShell(v,txt,append){const el=document.getElementById(shells[v]);if(!el)return;
+  const b=el.querySelector(".body");let t=append?(b.textContent+txt):txt;if(t.length>240)t=t.slice(t.length-240);b.textContent=t;}
+function speak(v,on){const el=document.getElementById(shells[v]);if(el)el.classList.toggle("speaking",on);}
+function pre(t){return '<span class="pre">'+t+'</span>';}
+function esc(s){return (s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+function setTheme(t){const e=document.getElementById("hTheme");e.textContent=t;e.title=t;}
+function slam(text,kind){const e=document.getElementById("magitext");e.textContent=text;
+  e.className="";void e.offsetWidth;e.className="show"+(kind?" "+kind:"");}
+
+function onPsyche(m){
+  switch(m.type){
+    case "seed": logln(pre("seed")+esc(m.text),"faint"); break;
+    case "voice_start":
+      Object.keys(shells).forEach(k=>speak(k,false)); speak(m.voice,true);
+      if(m.voice==="NOEMA"||m.voice==="LYRA"){setShell(m.voice,"",false);cur[m.voice]=logln(pre(m.voice),m.voice);}
+      break;
+    case "voice_token":
+      setShell(m.voice,m.token,true);
+      if(cur[m.voice]){const d=document.getElementById("log");const stick=nearBot(d);
+        cur[m.voice].innerHTML+=esc(m.token);if(stick)d.scrollTop=d.scrollHeight;}
+      burn(m.token); break;
+    case "voice_end": speak(m.voice,false);
+      if(m.voice==="CASSIEL"||m.voice==="COGITO") setShell(m.voice,m.text||"",false); break;
+    case "objections":{
+      const txt=(m.objections||[]).map(o=>`✕ ${o.point} (${o.severity.toFixed(2)})`).join("\n")||"(nothing to break)";
+      setShell("CASSIEL",txt,false);
+      logln(pre("cassiel")+esc(((m.objections||[]).map(o=>o.point).join(" · "))||"can proceed")+
+        ` <span class="faint">[max ${(m.max_severity||0).toFixed(2)}, ${m.can_proceed?"proceed":"WAIT"}]</span>`,"CASSIEL");
+      pulse.CASSIEL=1; break;}
+    case "verdict":{
+      setShell("COGITO",`vote ${m.vote} · ${m.stance}\n${m.self_note||""}`,false);
+      document.getElementById("triadstat").innerHTML=`vote <b>${m.vote}</b> · dominant <b>${m.dominant}</b> · ${m.stance}`;
+      logln(pre("cogito")+`<b>${m.stance}</b> · dominant ${m.dominant} · ${m.vote} — ${esc(m.self_note||"")}`,"COGITO");
+      if(m.stance!=="continue") slam(`${m.stance} · ${m.vote}`,m.stance==="accept"?"accept":"reject");
+      pulse[m.dominant]=1; break;}
+    case "synthesis":
+      lastSynthesis=m.text; document.getElementById("nowtext").textContent=m.text;
+      window._n=(window._n||0)+1; burn(m.text);
+      logln(pre("synthesis")+esc(m.text),"syn"); break;
+    case "recall":
+      logln(pre("recall")+(m.true?"":"<b>FALSE MEMORY</b> ")+esc(m.frag||"(void)"),m.true?"steel":"wound"); break;
+    case "self_edit":
+      logln(pre("self-edit")+m.kind+" → "+(m.target||m.param)+" "+esc(m.content||("Δ"+m.delta+" = "+m.value)),"steel"); break;
+    case "dominance":
+      logln(pre("dominance")+"the simplex tilts to "+m.voice+" — a separate madness","wound"); pulse[m.voice]=2; break;
+    case "madness":
+      madVoice=m.voice; madFlash=0.55; pulse[m.voice]=2;
+      slam(`${m.voice} ascendant`,"reject");
+      logln(pre("madness")+m.voice+" ascendant — "+
+        ({CASSIEL:"nihilistic paralysis. it freezes; the flesh dissolves",
+          NOEMA:"cold runaway. faster, denser, colder",
+          LYRA:"dissolution into imagery. it comes apart"}[m.voice]||""),"wound"); break;
+    case "witness":
+      slam("witness","steel");
+      logln(pre("witness")+"the glass thins — it feels you watching","steel"); break;
+    case "graph": graphSnap=m;
+      document.getElementById("hReg").textContent=(m.regime||"")+(m.degraded?" ·DEGRADED":""); break;
+    case "birth":
+      document.getElementById("hSoul").textContent=m.soul_id.slice(0,8);
+      if(m.theme) setTheme(m.theme);
+      document.body.classList.remove("dying");
+      Object.values(shells).forEach(id=>document.getElementById(id).querySelector(".body").textContent="");
+      document.getElementById("nowtext").textContent="…"; madVoice=null;madFlash=0;
+      const inh=(m.inherited&&m.inherited.length)?" · inherits "+m.inherited.length+" remains":"";
+      logln(pre("birth")+"a new soul opens its eye: "+m.soul_id.slice(0,8)+inh,"steel");
+      slam("◢ reboot","accept");
+      const s=document.getElementById("stage");s.classList.add("flash");setTimeout(()=>s.classList.remove("flash"),800); break;
+    case "death": death(m.tombstone); slam("signal lost","reject"); break;
+    case "log": logln(pre(m.level||"log")+esc(m.text),"faint"); break;
+  }
+}
+
+function death(t){
+  document.body.classList.add("dying");
+  document.getElementById("dead2").innerHTML='<span class="x">signal lost</span>'+
+    `soul ${t.soul_id.slice(0,8)} · cause: ${t.cause} · ${t.n_thoughts} thoughts · peak coherence ${t.peak_coherence}<br>`+
+    `dominant voice in life: ${t.dominant_voice_life}<br><br>“${esc(t.final_thought)}”<br><br>${esc(t.drift_summary)}`;
+}
+
+// ── flesh (throb + chromatic aberration) ──
+const lcv=document.getElementById("lenia"),lctx=lcv.getContext("2d");
+const rcv=document.getElementById("rd"),rctx=rcv.getContext("2d");
+let limg=null,rimg=null;
+function lerp(a,b,t){return a+(b-a)*t}
+function renderLenia(){
+  if(!leniaBuf)return; const dim=leniaDim;
+  if(!limg||limg.width!==dim){lcv.width=dim;lcv.height=dim;limg=lctx.createImageData(dim,dim);}
+  const d=limg.data;
+  for(let i=0;i<dim*dim;i++){const v=leniaBuf[i]/255;const o=i*4;
+    d[o]=lerp(7,255,Math.min(1,v*1.3));d[o+1]=lerp(8,179,v);d[o+2]=lerp(10,71,v*v);d[o+3]=255;}
+  lctx.globalCompositeOperation="source-over";lctx.filter="none";lctx.globalAlpha=1;
+  lctx.putImageData(limg,0,0);
+  // chromatic fringe ONLY on deep decoherence — normally the flesh is clean
+  const ab=1-st.coherence;
+  if(ab>0.45){const dx=Math.max(1,Math.round((ab-0.3)*2));
+    lctx.globalCompositeOperation="screen";lctx.globalAlpha=0.3*(ab-0.3);
+    lctx.filter="hue-rotate(-35deg)";lctx.drawImage(lcv,dx,0);
+    lctx.filter="hue-rotate(150deg)";lctx.drawImage(lcv,-dx,0);
+    lctx.filter="none";lctx.globalCompositeOperation="source-over";lctx.globalAlpha=1;}
+}
+function renderRD(){
+  if(!rdBuf)return; const dim=rdDim;
+  if(!rimg||rimg.width!==dim){rcv.width=dim;rcv.height=dim;rimg=rctx.createImageData(dim,dim);}
+  const d=rimg.data;
+  for(let i=0;i<dim*dim;i++){const v=rdBuf[i]/255;const o=i*4;
+    d[o]=lerp(7,92,v);d[o+1]=lerp(8,122,v);d[o+2]=lerp(10,153,Math.min(1,v*1.2));d[o+3]=255;}
+  rctx.putImageData(rimg,0,0);
+}
+
+// ── MAGI triad (triangle) ──
+const mcv=document.getElementById("magi"),mctx=mcv.getContext("2d"),MW=360,MH=230;
+const N={NOEMA:[180,36],CASSIEL:[48,198],LYRA:[312,198],COGITO:[180,134]};
+const col={NOEMA:"#EDE7DA",CASSIEL:"#8fb0d0",LYRA:"#FFB347",COGITO:"#d5dee6"};
+function mline(a,b){mctx.beginPath();mctx.moveTo(a[0],a[1]);mctx.lineTo(b[0],b[1]);mctx.stroke();}
+function drawMagi(){
+  mctx.clearRect(0,0,MW,MH);
+  mctx.beginPath();mctx.moveTo(N.NOEMA[0],N.NOEMA[1]);mctx.lineTo(N.CASSIEL[0],N.CASSIEL[1]);
+  mctx.lineTo(N.LYRA[0],N.LYRA[1]);mctx.closePath();mctx.fillStyle="rgba(46,68,86,.22)";mctx.fill();
+  // outer triangle — thick, clearly visible even at rest
+  mctx.lineWidth=2.8;
+  for(const[a,b]of [["NOEMA","CASSIEL"],["CASSIEL","LYRA"],["LYRA","NOEMA"]]){
+    const p=Math.max(pulse[a],pulse[b]);
+    mctx.strokeStyle=p>0?`rgba(232,161,58,${(.5+.5*p).toFixed(2)})`:"rgba(124,160,192,.9)";mline(N[a],N[b]);}
+  // inner spokes to COGITO
+  mctx.lineWidth=1.4;
+  for(const k of ["NOEMA","CASSIEL","LYRA"]){const p=Math.max(pulse[k],pulse.COGITO);
+    mctx.strokeStyle=p>0?`rgba(232,161,58,${(.25+.4*p).toFixed(2)})`:"rgba(70,96,122,.75)";mline(N[k],N.COGITO);}
+  // glowing nodes + labels
+  mctx.font="11px "+getComputedStyle(document.body).fontFamily;mctx.textAlign="center";
+  for(const k in N){const p=N[k],pl=pulse[k],r=(k==="COGITO"?11:14)+pl*8;
+    mctx.shadowBlur=9+pl*14;mctx.shadowColor=col[k];
+    mctx.beginPath();mctx.arc(p[0],p[1],r,0,7);mctx.fillStyle=col[k];mctx.fill();
+    mctx.shadowBlur=0;
+    mctx.fillStyle="#c7d2dc";mctx.fillText(k,p[0],k==="NOEMA"?p[1]-r-7:p[1]+r+15);pulse[k]*=0.93;}
+}
+
+// ── grain ──
+const gcvn=document.getElementById("grain"),gx=gcvn.getContext("2d"),GW=220,GH=130;
+gcvn.width=GW;gcvn.height=GH;let gimg=gx.createImageData(GW,GH),gf=0;
+function drawGrain(){if(gf++%2)return;const d=gimg.data;
+  for(let i=0;i<GW*GH;i++){const v=Math.random()*255|0,o=i*4;d[o]=d[o+1]=d[o+2]=v;d[o+3]=255;}gx.putImageData(gimg,0,0);}
+
+// ── glitch / shake / tint ──
+function applyGlitch(){
+  const stage=document.getElementById("stage"),ab=1-st.coherence;
+  // gentle drift only when genuinely feverish AND incoherent; small
+  const shake=Math.max(0,st.arousal*ab-0.4);
+  const sx=(Math.random()*2-1)*shake*2.5, sy=(Math.random()*2-1)*shake*2;
+  stage.style.transform=`translate(${sx.toFixed(2)}px,${sy.toFixed(2)}px)`;
+  stage.style.filter=`saturate(${(0.82+st.coherence*0.45).toFixed(2)}) contrast(${(1+ab*0.32).toFixed(2)}) hue-rotate(${(st.valence*-9).toFixed(1)}deg) brightness(${(0.9+st.vitality*0.2).toFixed(2)})`;
+
+  // slow organic breath — calm, not a heartbeat twitch
+  const breath=Math.sin(performance.now()/2600);
+  document.getElementById("fleshwrap").style.transform=`translate(-50%,-48%) scale(${(1+0.012*breath).toFixed(3)})`;
+  const L=document.getElementById("lenia"),glow=24+st.arousal*34+Math.max(0,breath)*8;
+  L.style.boxShadow=`0 0 ${glow.toFixed(0)}px rgba(232,161,58,${(0.16+st.arousal*0.16).toFixed(2)}), inset 0 0 60px rgba(0,0,0,.5)`;
+  L.style.opacity=st.vitality<0.25?(0.6+0.25*Math.abs(breath)).toFixed(2):1;
+
+  const beat=Math.sin(st.heartbeat*Math.PI*2);
+  const sc=document.getElementById("scan");
+  sc.style.opacity=(0.08+0.12*Math.abs(beat)+ab*0.1).toFixed(2);
+  sc.style.transform=`translateY(${(st.heartbeat*3-1.5).toFixed(1)}px)`;
+  document.getElementById("vign").style.boxShadow=`inset 0 0 ${(210+Math.max(0,beat)*28).toFixed(0)}px 70px rgba(0,0,0,.9)`;
+
+  // tint by valence/coherence + madness flash — subtle
+  let a=ab*0.07+Math.abs(st.valence)*0.05, c=st.valence<0?"200,50,30":"232,161,58";
+  if(madFlash>0.01){c=MADCOL[madVoice]||c;a=Math.max(a,madFlash*0.7);madFlash*=0.95;}
+  document.getElementById("tint").style.background=`radial-gradient(ellipse at center, transparent 30%, rgba(${c},${a.toFixed(3)}) 100%)`;
+
+  // datamosh only on real decoherence spikes — rare
+  tearHot=Math.max(tearHot, st.decoherence);
+  if(tearHot>0.55&&Math.random()<tearHot*0.06){const t=document.getElementById("tear");
+    t.style.opacity=(.2+tearHot*0.22).toFixed(2);
+    t.style.background=`linear-gradient(0deg,transparent ${10+Math.random()*70}%,rgba(200,50,30,.2) 0,rgba(92,122,153,.16) ${20+Math.random()*55}%,transparent 0)`;
+    setTimeout(()=>document.getElementById("tear").style.opacity=0,60+Math.random()*60);}
+  tearHot*=0.9;
+
+  stage.classList.toggle("aperture",st.aperture>0.8);
+  if(st.aperture>0.8)document.getElementById("press").textContent=lastSynthesis||"…";
+}
+
+// ── burn-in ghosts + xeno katakana ──
+const bcv=document.getElementById("burn"),bctx=bcv.getContext("2d");
+function fitBurn(){bcv.width=innerWidth;bcv.height=innerHeight;}
+let burnQ=[];
+function burn(t){if(t)burnQ.push(t.slice(0,16));}
+function drawBurn(){
+  // burn-in = the creature's own obsessive tokens, slowly seared into the glass (memory as scar)
+  bctx.fillStyle="rgba(7,8,10,0.022)";bctx.fillRect(0,0,bcv.width,bcv.height);
+  if(burnQ.length){const t=burnQ.shift();
+    bctx.fillStyle="rgba(232,161,58,0.045)";
+    bctx.font=(12+Math.random()*14).toFixed(0)+"px "+getComputedStyle(document.body).fontFamily;
+    bctx.fillText(t,Math.random()*(bcv.width-160),40+Math.random()*(bcv.height-80));}
+}
+
+// ── instruments ──
+function buildAxes(){const c=document.getElementById("axes");c.innerHTML="";
+  AX.forEach(a=>c.insertAdjacentHTML("beforeend",
+   `<div class="axrow"><div class="nm">${a}</div><div class="bar"><div class="fill" id="f_${a}"></div></div><div class="vv" id="v_${a}">0</div></div>`));}
+function drawGod(){
+  for(const a of AX){const v=st[a],f=document.getElementById("f_"+a),vv=document.getElementById("v_"+a);if(!f)continue;
+    const norm=a==="valence"?(v+1)/2:v;f.style.width=(norm*100).toFixed(0)+"%";
+    f.style.background=a==="decoherence"?"var(--wound)":(a==="coherence"&&v<.2?"var(--wound)":"var(--sodium)");vv.textContent=v.toFixed(2);}
+  const g=document.getElementById("gcv").getContext("2d");g.clearRect(0,0,500,120);
+  AX.forEach(a=>{const arr=hist[a];if(arr.length<2)return;g.strokeStyle=a==="decoherence"?"#C8321E":"rgba(232,161,58,.7)";
+    g.globalAlpha=(a==="coherence"||a==="decoherence")?.9:.32;g.beginPath();
+    for(let i=0;i<arr.length;i++){const v=a==="valence"?(arr[i]+1)/2:arr[i];const x=i/240*500,y=120-v*118;i?g.lineTo(x,y):g.moveTo(x,y);}
+    g.stroke();g.globalAlpha=1;});
+}
+
+// ── main loop ──
+function frame(){
+  renderLenia();renderRD();drawMagi();drawGrain();applyGlitch();drawBurn();
+  if(document.getElementById("god").classList.contains("open"))drawGod();
+  document.getElementById("hTick").textContent=st.tick|0;
+  document.getElementById("hN").textContent=window._n||0;
+  document.getElementById("capVit").textContent=(st.vitality*100|0)+"%";
+  requestAnimationFrame(frame);
+}
+
+// ── controls ──
+function ov(axis,value){fetch("/control/override",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({axis,value,ttl_s:25})});}
+function clr(){fetch("/control/clear_override",{method:"POST"});}
+function nudge(target,param,value){fetch("/control/nudge",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({target,param,value})});}
+function kill(){fetch("/control/kill",{method:"POST"});}
+function toggleInstr(){document.getElementById("god").classList.toggle("open");}
+document.getElementById("hInstr").onclick=toggleInstr;
+addEventListener("keydown",e=>{if(e.key==="g"||e.key==="i")toggleInstr();});
+fetch("/api/state").then(r=>r.json()).then(j=>{if(j.theme)setTheme(j.theme);if(j.soul)document.getElementById("hSoul").textContent=String(j.soul).slice(0,8);}).catch(()=>{});
+
+buildAxes();fitBurn();addEventListener("resize",fitBurn);connect();frame();
+</script>
+</body>
+</html>
