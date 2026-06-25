@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+souls/*
+!souls/.gitkeep
+
+# PERSONAL IP — душа твари держится вне публичного репо (как промпты EMIYA).
+core/psyche/prompts.py
+
+node_modules/
+dist/
+.DS_Store
+*.sqlite
+*.sqlite-*
